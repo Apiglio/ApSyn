@@ -1,6 +1,8 @@
 unit apsyn_hash;
 
 //通过逻辑斯蒂映射的混沌性对文件进行抽样
+//敏感度非常差，仅用作排序和快速检测
+
 //x_{n+1} = lambda * x_n * ( 1- x_n )
 //参数: x_0∈[0,1]
 //参数: lambda∈[3.6,4.0]
@@ -15,9 +17,10 @@ interface
 uses
   Classes, SysUtils;
 
-function LogisticHash8(str:TStream):string;
-function LogisticHash32(str:TStream):string;
-function LogisticHash256(str:TStream):string;
+
+function LogisticHash(str:TStream;digit:integer):string;
+function GetLogHash(filename:string;digit:integer):string;
+
 
 implementation
 
@@ -30,33 +33,32 @@ function LogisticHash(str:TStream;digit:integer):string;
 var x0,xn,lambda:double;
     filesize,seekindex:int64;
 begin
+  result:='';
   filesize:=str.Size;
+  if filesize=0 then exit;
   x0:=frac(ln(filesize+2));
   lambda:=3.6+0.4*(filesize mod 32767)/32766;
-  result:='';
   xn:=x0;
-  while length(result)>=digit do
+  while length(result)<digit do
     begin
-      xn:=lambda*xn*(1-xn);
-      seekindex:=int64(xn*(filesize-1));
+      x0:=lambda*x0*(1-x0);
+      xn:=xn+x0;
+      seekindex:=trunc(x0*(filesize-1));
       str.Seek(seekindex,soFromBeginning);
       result:=result+ByteToSeg(str.ReadByte);
     end;
 end;
 
-function LogisticHash8(str:TStream):string;inline;
+function GetLogHash(filename:string;digit:integer):string;
+var filestr:TFileStream;
 begin
-  LogisticHash(str,4);
-end;
-
-function LogisticHash32(str:TStream):string;inline;
-begin
-  LogisticHash(str,16);
-end;
-
-function LogisticHash256(str:TStream):string;inline;
-begin
-  LogisticHash(str,128);
+  result:='';
+  filestr:=TFileStream.Create(filename,fmOpenRead);
+  try
+    result:=LogisticHash(filestr,digit);
+  finally
+    filestr.Free;
+  end;
 end;
 
 

@@ -7,8 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, ApSyn_main, apsyn_hash
-  { you can add units after this };
+  Forms, ApSyn_main, apsyn_hash;
 
 {$R *.res}
 
